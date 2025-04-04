@@ -7,14 +7,14 @@ int FreqVal[7]; // Store frequency band values
 
 // Servo Setup
 Servo myServo;
-int currentServoPos = 90;  // Start position
+int currentServoPos = 100;  // Start position
 const int servoMaxStep = 1; // Max movement per change
 
 // Relay Pins (LEDs and Water Pump)
-const int redRelay = 6;
-const int greenRelay = 7;
-const int blueRelay = 8;
-const int waterRelay = 9;
+const int redRelay = 4;
+const int greenRelay = 5;
+const int blueRelay = 6;
+const int waterRelay = 8;
 
 // Thresholds for Activating Effects
 const int lowThreshold = 300;
@@ -26,7 +26,7 @@ void setup() {
   Audio.Init(); // Initialize Audio Analyzer
   
   // Setup Servo
-  myServo.attach(10);
+  myServo.attach(9);
   myServo.write(currentServoPos); // Set initial position
   
   // Setup Relays as Outputs
@@ -70,11 +70,12 @@ void handleEffects(int FreqVal[]) {
   Serial.print("  | Mid: "); Serial.print(mid);
   Serial.print("  | Semitreble: "); Serial.print(semitreble);
   Serial.print("  | treble: "); Serial.println(treble);
-  // LED and Water Control
-  bool redState = (bass > lowThreshold || semibass > lowThreshold);
-  bool greenState = (ultra > midThreshold && mid > highThreshold );
-  bool blueState = (mid> midThreshold);
-  bool waterState = (semitreble > highThreshold && treble > highThreshold);
+  
+  // LED and Water Control (Inverted Logic)
+  bool redState = !(bass > lowThreshold || semibass > lowThreshold);
+  bool greenState = !(ultra > midThreshold && mid > highThreshold);
+  bool blueState = !(mid > midThreshold);
+  bool waterState = !(semitreble > highThreshold && treble > highThreshold);
   
   digitalWrite(redRelay, redState);
   digitalWrite(greenRelay, greenState);
@@ -82,21 +83,22 @@ void handleEffects(int FreqVal[]) {
   digitalWrite(waterRelay, waterState);
   
   // Print LED and Water States
-  Serial.print(redState ? "🔴 Red LED: ON  " : "⚫ Red LED: OFF  ");
-  Serial.print(greenState ? "🟢 Green LED: ON  " : "⚫ Green LED: OFF  ");
-  Serial.print(blueState ? "🔵 Blue LED: ON  " : "⚫ Blue LED: OFF  ");
-  Serial.println(waterState ? "💦 Water Pump: ON" : "🚫 Water Pump: OFF");
+  Serial.print(!redState ? "🔴 Red LED: ON  " : "⚫ Red LED: OFF  ");
+  Serial.print(!greenState ? "🟢 Green LED: ON  " : "⚫ Green LED: OFF  ");
+  Serial.print(!blueState ? "🔵 Blue LED: ON  " : "⚫ Blue LED: OFF  ");
+  Serial.println(!waterState ? "💦 Water Pump: ON" : "🚫 Water Pump: OFF");
   
   // Servo Motion - Controlled 15° Steps
   int totalSound = bass + mid + treble; // Combine intensities
   int servoChange = map(totalSound, lowThreshold, highThreshold * 3, -servoMaxStep, servoMaxStep);
   servoChange = constrain(servoChange, -servoMaxStep, servoMaxStep); // Limit to ±15 degrees
-  
-  int newServoPos = currentServoPos + servoChange;
-  newServoPos = constrain(newServoPos, 0, 180); // Prevent exceeding servo limits
-  
+
+  int newServoPos = currentServoPos - servoChange; // Change direction to move from 100 to 70
+  newServoPos = constrain(newServoPos, 70, 100); // Prevent exceeding servo limits
+
   myServo.write(newServoPos);
   currentServoPos = newServoPos; // Update current position
+
   
   Serial.print("🔄 Servo Angle: ");
   Serial.print(currentServoPos);
