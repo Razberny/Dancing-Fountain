@@ -1,0 +1,71 @@
+#include <Servo.h>
+
+// Servo setup
+Servo myServo;
+int currentServoPosition = 90; // Initial position
+
+// Relay pins
+const int redRelay = 4;
+const int greenRelay = 5;
+const int blueRelay = 6;
+const int waterRelay = 8;
+
+// Relay states
+bool redState = false;
+bool greenState = false;
+bool blueState = false;
+bool waterState = false;
+
+void setup() {
+  Serial.begin(9600);
+  
+  // Initialize servo
+  myServo.attach(9); // Servo on pin 9
+  myServo.write(currentServoPosition); // Set initial position
+
+  // Set up relay pins
+  pinMode(redRelay, OUTPUT);
+  pinMode(greenRelay, OUTPUT);
+  pinMode(blueRelay, OUTPUT);
+  pinMode(waterRelay, OUTPUT);
+
+  // Turn off all relays initially
+  digitalWrite(redRelay, LOW);
+  digitalWrite(greenRelay, LOW);
+  digitalWrite(blueRelay, LOW);
+  digitalWrite(waterRelay, LOW);
+
+  Serial.println("System Ready");
+}
+
+void loop() {
+  // Randomize states
+  redState = random(2);
+  greenState = random(2);
+  blueState = random(2);
+  waterState = random(2);
+
+  // Apply random states to relays
+  digitalWrite(redRelay, redState ? HIGH : LOW);
+  digitalWrite(greenRelay, greenState ? HIGH : LOW);
+  digitalWrite(blueRelay, blueState ? HIGH : LOW);
+  digitalWrite(waterRelay, waterState ? HIGH : LOW);
+
+  // Randomize servo position within ±15 degrees
+  int servoOffset = random(-15, 16); // Generate a random offset between -15 and 15
+  currentServoPosition = constrain(currentServoPosition + servoOffset, 1, 180); // Keep within limits
+  myServo.write(currentServoPosition);
+  
+  Serial.print("Servo moved to: ");
+  Serial.println(currentServoPosition);
+
+  // Print status to Serial Monitor
+  Serial.println("Randomizing...");
+  Serial.println(redState ? "Red LED ON" : "Red LED OFF");
+  Serial.println(greenState ? "Green LED ON" : "Green LED OFF");
+  Serial.println(blueState ? "Blue LED ON" : "Blue LED OFF");
+  Serial.println(waterState ? "Water Relay ON" : "Water Relay OFF");
+
+  // Wait for 3 seconds before next randomization
+  delay(3000);
+}
